@@ -1,0 +1,216 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Amiri:wght@400;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   Base Reset & Root
+   ============================================================ */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+:root {
+  color-scheme: light;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: #f1f5f9;
+  background-image:
+    radial-gradient(at 20% 10%, rgba(16, 185, 129, 0.06) 0px, transparent 50%),
+    radial-gradient(at 80% 90%, rgba(245, 158, 11, 0.05) 0px, transparent 50%);
+  font-family: 'Inter', system-ui, sans-serif;
+  color: #1e293b;
+}
+
+/* ============================================================
+   Custom Scrollbar
+   ============================================================ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* ============================================================
+   Component Layer
+   ============================================================ */
+@layer components {
+  .card {
+    @apply bg-white rounded-2xl shadow-card border border-slate-100 p-5;
+  }
+
+  .card-lg {
+    @apply bg-white rounded-3xl shadow-card-lg border border-slate-100 p-6;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700
+           text-white text-sm font-medium rounded-xl transition-all duration-200
+           shadow-sm hover:shadow-md active:scale-95;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center gap-2 px-4 py-2 bg-surface-100 hover:bg-surface-200
+           text-slate-700 text-sm font-medium rounded-xl transition-all duration-200
+           border border-slate-200;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold;
+  }
+
+  .sidebar-link {
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
+           transition-all duration-200 cursor-pointer;
+  }
+
+  .sidebar-link-active {
+    @apply bg-primary-600 text-white shadow-sm;
+  }
+
+  .sidebar-link-inactive {
+    @apply text-slate-600 hover:bg-slate-100 hover:text-slate-800;
+  }
+
+  .stat-value {
+    @apply text-3xl font-bold tracking-tight;
+  }
+
+  .stat-label {
+    @apply text-sm font-medium text-slate-500;
+  }
+
+  .section-title {
+    @apply text-base font-semibold text-slate-800;
+  }
+}
+
+/* ============================================================
+   Utility Layer
+   ============================================================ */
+@layer utilities {
+  .text-gradient-green {
+    background: linear-gradient(135deg, #059669, #34d399);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-gold {
+    background: linear-gradient(135deg, #d97706, #fbbf24);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .glassmorphism {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+
+  .animate-in {
+    animation: fadeIn 0.4s ease-out, slideUp 0.4s ease-out;
+  }
+
+  .progress-bar-fill {
+    transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+/* ============================================================
+   Print Styles — Laporan Keuangan RAB
+   ============================================================ */
+@media print {
+  /* Hide everything by default */
+  body > * { display: none !important; }
+  #print-laporan-keuangan {
+    display: block !important;
+    position: fixed;
+    inset: 0;
+    padding: 24px 32px;
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    color: #0f172a;
+    background: white;
+  }
+
+  /* Show only the print target */
+  #print-laporan-keuangan * { display: revert !important; }
+
+  .print-hide { display: none !important; }
+
+  /* Table styles */
+  #print-laporan-keuangan table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+  }
+  #print-laporan-keuangan th {
+    background: #f1f5f9;
+    font-weight: 600;
+    padding: 6px 10px;
+    text-align: left;
+    border: 1px solid #e2e8f0;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  #print-laporan-keuangan td {
+    padding: 5px 10px;
+    border: 1px solid #e2e8f0;
+    vertical-align: top;
+  }
+  #print-laporan-keuangan tr:nth-child(even) td { background: #f8fafc; }
+  #print-laporan-keuangan .print-total td {
+    font-weight: 700;
+    background: #f0fdf4;
+    border-top: 2px solid #16a34a;
+  }
+  #print-laporan-keuangan .print-section-header {
+    font-size: 12px;
+    font-weight: 700;
+    color: #065f46;
+    padding: 10px 0 4px;
+    border-bottom: 2px solid #065f46;
+    margin-top: 16px;
+  }
+  #print-laporan-keuangan .print-summary-box {
+    display: flex;
+    gap: 16px;
+    margin: 12px 0;
+  }
+  #print-laporan-keuangan .print-summary-item {
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 8px 14px;
+    flex: 1;
+  }
+
+  @page {
+    margin: 15mm 12mm;
+    size: A4 portrait;
+  }
+}
