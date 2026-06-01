@@ -400,7 +400,7 @@ function PrintArea({
           LAPORAN KEUANGAN QURBAN
         </h1>
         <p style={{ fontSize: 12, color: '#475569', margin: '4px 0 0' }}>
-          Pondok Riyadhussholihiin — Panitia Qurban 1446 H
+          Masjid An-Nuur — Panitia Qurban 1446 H
         </p>
         <p style={{ fontSize: 10, color: '#94a3b8', margin: '2px 0 0' }}>Dicetak: {tglCetak}</p>
       </div>
@@ -523,7 +523,7 @@ export default function KeuanganPage() {
     // Sheet 1: Ringkasan
     const wsRing = XLSX.utils.aoa_to_sheet([
       ['LAPORAN KEUANGAN QURBAN 1446 H'],
-      ['Pondok Riyadhussholihiin — Panitia Qurban'],
+      ['Masjid An-Nuur — Panitia Qurban'],
       [],
       ['Keterangan', 'Jumlah'],
       ['Total Kas Masuk', totalPemasukan],
@@ -595,7 +595,7 @@ export default function KeuanganPage() {
             Laporan Keuangan RAB
           </h1>
           <p className="text-sm text-slate-500 mt-0.5">
-            Rencana Anggaran Biaya Qurban 1446 H — Pondok Riyadhussholihiin
+            Rencana Anggaran Biaya Qurban 1446 H — Masjid An-Nuur
           </p>
         </div>
 

@@ -1,4 +1,4 @@
-import { Bell, RefreshCw, Wifi } from 'lucide-react';
+import { Bell, RefreshCw, Wifi, Menu } from 'lucide-react';
 import { useState } from 'react';
 
 // ============================================================
@@ -8,6 +8,7 @@ import { useState } from 'react';
 interface NavbarProps {
   onRefresh?: () => void;
   isLoading?: boolean;
+  onMenuClick?: () => void;
 }
 
 function getHijriDate(): string {
@@ -27,7 +28,7 @@ function getHijriLabel(): string {
   return '6 Dzulhijjah 1447 H';
 }
 
-export function Navbar({ onRefresh, isLoading }: NavbarProps) {
+export function Navbar({ onRefresh, isLoading, onMenuClick }: NavbarProps) {
   const [rotating, setRotating] = useState(false);
 
   const handleRefresh = () => {
@@ -38,9 +39,15 @@ export function Navbar({ onRefresh, isLoading }: NavbarProps) {
   };
 
   return (
-    <header className="h-16 bg-white border-b border-slate-100 flex items-center px-6 gap-4 sticky top-0 z-20 shadow-sm">
+    <header className="h-16 bg-white border-b border-slate-100 flex items-center px-4 md:px-6 gap-3 md:gap-4 sticky top-0 z-20 shadow-sm">
+      {onMenuClick && (
+        <button onClick={onMenuClick} className="md:hidden w-9 h-9 flex items-center justify-center bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-500">
+          <Menu size={18} />
+        </button>
+      )}
+
       {/* Page Title Area — diisi oleh halaman */}
-      <div className="flex-1">
+      <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5 text-xs font-medium text-slate-400">
             <Wifi size={12} className="text-emerald-500" />

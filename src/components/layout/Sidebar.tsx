@@ -1,4 +1,4 @@
-﻿import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   Beef,
@@ -92,7 +92,7 @@ export function Sidebar() {
       <div className="px-5 py-4 border-t border-slate-100">
         <div className="bg-emerald-50 rounded-xl p-3">
           <p className="text-[10px] font-semibold text-emerald-700 mb-0.5">Idul Adha 1446 H</p>
-          <p className="text-xs text-emerald-600">Pondok Riyadhussholihiin</p>
+          <p className="text-xs text-emerald-600">Masjid An-Nuur</p>
           <p className="text-[10px] text-emerald-500 mt-1">Data tersimpan lokal (localStorage)</p>
         </div>
       </div>

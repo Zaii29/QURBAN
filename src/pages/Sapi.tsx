@@ -770,7 +770,7 @@ export default function SapiPage() {
       <div className="flex-1 min-w-0 space-y-5">
 
         {/* Header */}
-        <div className="flex items-start justify-between flex-wrap gap-3">
+        <div className="flex flex-col md:flex-row items-start justify-between flex-wrap gap-4 md:gap-3">
           <div>
             <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
               <span className="text-2xl">🐄🐐</span> Manajemen Hewan Qurban
@@ -780,7 +780,7 @@ export default function SapiPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap w-full md:w-auto">
             {/* WA Mode Indicator + Toggle */}
             <button
               onClick={() => saveConfig({ ...waConfig, modeAsli: !waConfig.modeAsli })}
@@ -832,8 +832,8 @@ export default function SapiPage() {
         )}
 
         {/* Filter bar */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <Filter size={14} className="text-slate-400" />
+        <div className="flex items-center gap-2 flex-wrap pb-2 md:pb-0 overflow-x-auto scrollbar-hide">
+          <Filter size={14} className="text-slate-400 flex-shrink-0" />
 
           {/* Jenis filter */}
           {(['Semua', 'Sapi', 'Kambing'] as const).map(j => (

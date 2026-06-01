@@ -97,7 +97,7 @@ export default function Dashboard() {
       className="space-y-6 max-w-[1400px]"
     >
       {/* ── Header ─────────────────────────────────────────── */}
-      <motion.div variants={itemVariants} className="flex items-start justify-between">
+      <motion.div variants={itemVariants} className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-0">
         <div>
           <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
             <Beef size={22} className="text-emerald-600" />
@@ -107,7 +107,7 @@ export default function Dashboard() {
             Pantau status seluruh hewan qurban secara real-time
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap w-full md:w-auto">
           <button 
             onClick={async () => {
               const success = await seedKurbanData();
@@ -127,7 +127,7 @@ export default function Dashboard() {
       </motion.div>
 
       {/* ── Summary Cards ──────────────────────────────────── */}
-      <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           {
             label: 'Total Hewan Qurban',

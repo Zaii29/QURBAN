@@ -1,4 +1,4 @@
-﻿import {
+import {
   createContext,
   useContext,
   useState,
@@ -73,7 +73,7 @@ function WaToast({ item, onDismiss }: { item: ToastItem; onDismiss: () => void }
         </div>
         <div className="flex-1">
           <p className="text-white text-xs font-bold leading-tight">WhatsApp Blast</p>
-          <p className="text-white/70 text-[10px]">Panitia Qurban Pondok Riyadhussholihiin</p>
+          <p className="text-white/70 text-[10px]">Panitia Qurban Masjid An-Nuur</p>
         </div>
         <button
           onClick={onDismiss}

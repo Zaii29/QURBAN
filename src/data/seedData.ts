@@ -1,4 +1,4 @@
-﻿import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from 'uuid';
 import type {
   Sapi,
   Warga,
@@ -225,7 +225,7 @@ export const seedKeuangan: TransaksiKeuangan[] = [
   { id: uuidv4(), jenis: 'Pemasukan', kategori: 'Iuran Mudhohi', deskripsi: 'Iuran operasional Mudhohi – Sapi 10 (Pak Irwan)', jumlah: 500000, tanggal: today(-6), noBukti: 'KWT-010', pic: 'Ibu Fatimah Zahra', createdAt: now(), updatedAt: now() },
   { id: uuidv4(), jenis: 'Pemasukan', kategori: 'Donasi Warga', deskripsi: 'Donasi sukarela warga RT 001/RW 001', jumlah: 750000, tanggal: today(-5), noBukti: 'KWT-011', pic: 'H. Abdul Karim', createdAt: now(), updatedAt: now() },
   { id: uuidv4(), jenis: 'Pemasukan', kategori: 'Donasi Warga', deskripsi: 'Donasi sukarela warga RT 002/RW 001', jumlah: 450000, tanggal: today(-4), noBukti: 'KWT-012', pic: 'H. Abdul Karim', createdAt: now(), updatedAt: now() },
-  { id: uuidv4(), jenis: 'Pemasukan', kategori: 'Subsidi Masjid', deskripsi: 'Subsidi kas Pondok Riyadhussholihiin untuk operasional', jumlah: 1500000, tanggal: today(-14), noBukti: 'KWT-013', pic: 'H. Abdul Karim', createdAt: now(), updatedAt: now() },
+  { id: uuidv4(), jenis: 'Pemasukan', kategori: 'Subsidi Masjid', deskripsi: 'Subsidi kas Masjid An-Nuur untuk operasional', jumlah: 1500000, tanggal: today(-14), noBukti: 'KWT-013', pic: 'H. Abdul Karim', createdAt: now(), updatedAt: now() },
 
   // ── PENGELUARAN ───────────────────────────────────────────
   { id: uuidv4(), jenis: 'Pengeluaran', kategori: 'Pakan & Akomodasi Hewan', deskripsi: 'Pakan jerami & konsentrat sapi (3 hari)', jumlah: 1500000, tanggal: today(-5), noBukti: 'BKK-001', pic: 'Pak Surya Darma', createdAt: now(), updatedAt: now() },
