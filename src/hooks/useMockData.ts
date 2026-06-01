@@ -1,6 +1,6 @@
-﻿import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '../lib/supabaseClient';
 import {
-  sapiService,
   wargaService,
   panitiaService,
   kuponService,
@@ -18,29 +18,81 @@ import type { Sapi, Warga, Panitia, Kupon, Distribusi, Sesi, SesiWarga, ImportWa
 export function useSapi() {
   const [data, setData] = useState<Sapi[]>([]);
 
-  const reload = useCallback(() => setData(sapiService.getAll()), []);
+  const fetchSapi = useCallback(async () => {
+    const { data: animals, error } = await supabase.from('animals').select('*').order('id', { ascending: true });
+    if (error) {
+      console.error('Error fetching animals:', error);
+      return;
+    }
+    
+    // Map Supabase 'animals' to local 'Sapi' type
+    const mapped: Sapi[] = (animals || []).map(a => ({
+      id: String(a.id),
+      nama: a.customer_name || 'Tanpa Nama',
+      nomorUrut: a.id,
+      jenisHewan: a.type as any || 'Sapi',
+      berat: a.weight || 0,
+      asalHewan: 'Supabase',
+      status: a.status as any || 'Menunggu',
+      namaKelompok: a.group_name || '',
+      noWaMudhohi: a.whatsapp || undefined,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }));
+    
+    setData(mapped);
+  }, []);
 
-  useEffect(() => { reload(); }, [reload]);
+  useEffect(() => { 
+    fetchSapi(); 
+
+    // Subscribe to realtime changes on 'animals' table
+    const channel = supabase.channel('animals_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'animals' }, () => {
+        fetchSapi();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchSapi]);
 
   return {
     sapi: data,
-    reload,
-    updateStatus: (id: string, status: Sapi['status']) => {
-      sapiService.update(id, { status });
-      reload();
+    reload: fetchSapi,
+    updateStatus: async (id: string, status: Sapi['status']) => {
+      await supabase.from('animals').update({ status }).eq('id', Number(id));
     },
-    addSapi: (item: Omit<Sapi, 'id' | 'createdAt' | 'updatedAt'>) => {
-      const created = sapiService.create(item);
-      reload();
-      return created;
+    addSapi: async (item: Omit<Sapi, 'id' | 'createdAt' | 'updatedAt'>) => {
+      const { data, error } = await supabase.from('animals').insert([{
+        type: item.jenisHewan,
+        weight: item.berat,
+        status: item.status,
+        customer_name: item.nama,
+        group_name: item.namaKelompok || null,
+        whatsapp: item.noWaMudhohi || null
+      }]).select().single();
+      
+      if (error) {
+        console.error('Error adding sapi:', error);
+        return null;
+      }
+      return data;
     },
-    deleteSapi: (id: string) => {
-      sapiService.delete(id);
-      reload();
+    deleteSapi: async (id: string) => {
+      await supabase.from('animals').delete().eq('id', Number(id));
     },
-    updateSapi: (id: string, patch: Partial<Omit<Sapi, 'id' | 'createdAt'>>) => {
-      sapiService.update(id, patch);
-      reload();
+    updateSapi: async (id: string, patch: Partial<Omit<Sapi, 'id' | 'createdAt'>>) => {
+      const updateData: any = {};
+      if (patch.jenisHewan !== undefined) updateData.type = patch.jenisHewan;
+      if (patch.berat !== undefined) updateData.weight = patch.berat;
+      if (patch.status !== undefined) updateData.status = patch.status;
+      if (patch.nama !== undefined) updateData.customer_name = patch.nama;
+      if (patch.namaKelompok !== undefined) updateData.group_name = patch.namaKelompok;
+      if (patch.noWaMudhohi !== undefined) updateData.whatsapp = patch.noWaMudhohi;
+
+      await supabase.from('animals').update(updateData).eq('id', Number(id));
     },
   };
 }

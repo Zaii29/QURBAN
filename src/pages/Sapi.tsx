@@ -5,10 +5,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Plus, Settings2, Beef, X, ChevronDown, Send,
-  CheckCircle2, Clock, AlertTriangle, MessageSquare,
-  Trash2, ToggleLeft, ToggleRight, Eye, Loader2,
-  ZapOff, Zap, Filter, Hash, Weight, MapPin, Phone,
+  Plus, Settings2, X, ChevronDown,
+  CheckCircle2, AlertTriangle, MessageSquare,
+  Trash2, ToggleLeft, ToggleRight, Loader2,
+  ZapOff, Zap, Filter, Weight, MapPin, Phone,
   Users, SlidersHorizontal, WifiOff,
 } from 'lucide-react';
 import { useSapi } from '../hooks/useMockData';
@@ -18,6 +18,13 @@ import type { Sapi, StatusSapi } from '../types';
 // Constants & Helpers
 // ============================================================
 const STATUS_FLOW: StatusSapi[] = ['Menunggu', 'Disembelih', 'Dikuliti', 'Dicacah', 'Selesai'];
+
+// Helper to normalize status string
+const normalizeStatus = (status: string | undefined): StatusSapi => {
+  if (!status) return 'Menunggu';
+  const capStatus = status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+  return (STATUS_FLOW.includes(capStatus as StatusSapi) ? capStatus : 'Menunggu') as StatusSapi;
+};
 
 const STATUS_CFG: Record<StatusSapi, { color: string; bg: string; border: string; dot: string }> = {
   Menunggu:    { color: 'text-slate-500',   bg: 'bg-slate-50',    border: 'border-slate-200', dot: 'bg-slate-400'   },
@@ -81,11 +88,12 @@ function formatTime(iso: string) {
 // Sub-component: Status Badge
 // ============================================================
 function StatusBadge({ status }: { status: StatusSapi }) {
-  const cfg = STATUS_CFG[status];
+  const safeStatus = normalizeStatus(status);
+  const cfg = STATUS_CFG[safeStatus] || STATUS_CFG['Menunggu'];
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold border ${cfg.color} ${cfg.bg} ${cfg.border}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
-      {status}
+    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold border ${cfg?.color || ''} ${cfg?.bg || ''} ${cfg?.border || ''}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${cfg?.dot || 'bg-slate-400'}`} />
+      {safeStatus}
     </span>
   );
 }
@@ -94,7 +102,8 @@ function StatusBadge({ status }: { status: StatusSapi }) {
 // Sub-component: Progress Stepper
 // ============================================================
 function StatusStepper({ status }: { status: StatusSapi }) {
-  const current = STATUS_FLOW.indexOf(status);
+  const safeStatus = normalizeStatus(status);
+  const current = STATUS_FLOW.indexOf(safeStatus);
   return (
     <div className="flex items-center gap-0.5 mt-2">
       {STATUS_FLOW.map((s, i) => (
@@ -106,14 +115,6 @@ function StatusStepper({ status }: { status: StatusSapi }) {
       ))}
     </div>
   );
-}
-
-// ============================================================
-// Sub-component: Hewan Icon
-// ============================================================
-function HewanIcon({ jenis, size = 'md' }: { jenis: 'Sapi' | 'Kambing'; size?: 'sm' | 'md' | 'lg' }) {
-  const s = { sm: 'text-xl', md: 'text-3xl', lg: 'text-4xl' }[size];
-  return <span className={s}>{jenis === 'Sapi' ? '🐄' : '🐐'}</span>;
 }
 
 // ============================================================
@@ -228,8 +229,8 @@ function TokenModal({ config, onSave, onClose }: {
 interface TambahHewanForm {
   jenisHewan: 'Sapi' | 'Kambing';
   namaKelompok: string;
-  mudhohiRaw: string;       // comma-separated
-  noWaMudhohi: string;
+  namaJemaah: string;        // → customer_name di Supabase
+  noWaMudhohi: string;       // → whatsapp di Supabase
   berat: string;
   asalHewan: string;
   catatan: string;
@@ -238,7 +239,7 @@ interface TambahHewanForm {
 const EMPTY_HEWAN: TambahHewanForm = {
   jenisHewan: 'Sapi',
   namaKelompok: '',
-  mudhohiRaw: '',
+  namaJemaah: '',
   noWaMudhohi: '',
   berat: '',
   asalHewan: '',
@@ -257,25 +258,20 @@ function TambahHewanModal({ maxUrut, onClose, onSave }: {
 
   const handleSubmit = () => {
     if (!form.namaKelompok.trim()) { setError('Nama kelompok wajib diisi.'); return; }
+    if (!form.namaJemaah.trim()) { setError('Nama Jemaah / Mudhohi utama wajib diisi.'); return; }
     if (!form.berat || Number(form.berat) <= 0) { setError('Berat hewan harus lebih dari 0.'); return; }
     if (!form.asalHewan.trim()) { setError('Asal/Supplier wajib diisi.'); return; }
 
-    const daftarMudhohi = form.mudhohiRaw
-      .split(',')
-      .map(s => s.trim())
-      .filter(Boolean);
-
     onSave({
-      nomorUrut:    maxUrut + 1,
-      nama:         `${form.jenisHewan === 'Sapi' ? 'Sapi' : 'Kambing'} – ${form.namaKelompok}`,
-      jenisHewan:   form.jenisHewan,
-      namaKelompok: form.namaKelompok.trim(),
-      daftarMudhohi: daftarMudhohi.length ? daftarMudhohi : undefined,
-      noWaMudhohi:  form.noWaMudhohi.trim() || undefined,
-      berat:        Number(form.berat),
-      asalHewan:    form.asalHewan.trim(),
-      catatan:      form.catatan.trim() || undefined,
-      status:       'Menunggu',
+      nomorUrut:     maxUrut + 1,
+      nama:          form.namaJemaah.trim(), // Multiple names can be entered here directly
+      jenisHewan:    form.jenisHewan,
+      namaKelompok:  form.namaKelompok.trim(),
+      noWaMudhohi:   form.noWaMudhohi.trim() || undefined,
+      berat:         Number(form.berat),
+      asalHewan:     form.asalHewan.trim(),
+      catatan:       form.catatan.trim() || undefined,
+      status:        'Menunggu',
     });
     onClose();
   };
@@ -330,36 +326,32 @@ function TambahHewanModal({ maxUrut, onClose, onSave }: {
 
           {/* Nama Kelompok */}
           <div>
-            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5 block">Nama Kelompok *</label>
+            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5 block">Nama Kelompok *
+              <span className="text-slate-400 font-normal ml-1 normal-case">(disimpan ke group_name)</span>
+            </label>
             <input
               type="text"
               value={form.namaKelompok}
               onChange={e => set('namaKelompok', e.target.value)}
-              placeholder="Misal: Keluarga Pak Hasan, Kelompok RT 003..."
+              placeholder="Misal: Kelompok RT 003, Keluarga Pak Hasan..."
               className="w-full px-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-emerald-400 focus:bg-white transition-colors"
               id="input-nama-kelompok"
             />
           </div>
 
-          {/* Daftar Mudhohi */}
+          {/* Nama Jemaah / Customer */}
           <div>
-            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5 block">
-              Daftar Nama Mudhohi
-              <span className="text-slate-400 font-normal ml-1">(pisah dengan koma)</span>
+            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5 block">Nama Jemaah / Mudhohi Utama *
+              <span className="text-slate-400 font-normal ml-1 normal-case">(disimpan ke customer_name)</span>
             </label>
-            <textarea
-              value={form.mudhohiRaw}
-              onChange={e => set('mudhohiRaw', e.target.value)}
-              placeholder="Pak Hasan, Bu Aminah, Pak Rudi..."
-              rows={2}
-              className="w-full px-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-emerald-400 focus:bg-white transition-colors resize-none"
-              id="input-daftar-mudhohi"
+            <input
+              type="text"
+              value={form.namaJemaah}
+              onChange={e => set('namaJemaah', e.target.value)}
+              placeholder="Misal: Pak Hasan bin Ali..."
+              className="w-full px-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-emerald-400 focus:bg-white transition-colors"
+              id="input-nama-jemaah"
             />
-            {form.mudhohiRaw.trim() && (
-              <p className="text-[11px] text-emerald-600 mt-1">
-                ✓ {form.mudhohiRaw.split(',').filter(s => s.trim()).length} mudhohi terdaftar
-              </p>
-            )}
           </div>
 
           {/* Nomor WA */}
@@ -454,34 +446,49 @@ function HewanCard({
   isSending: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const cfg = STATUS_CFG[hewan.status];
-  const stepIdx = STATUS_FLOW.indexOf(hewan.status);
+  if (!hewan) return null;
+  const safeStatus = normalizeStatus(hewan?.status);
+  const cfg = STATUS_CFG[safeStatus] || STATUS_CFG['Menunggu'];
+  const stepIdx = STATUS_FLOW.indexOf(safeStatus);
 
   return (
     <motion.div
       layout
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`bg-white rounded-2xl border-2 shadow-card hover:shadow-card-lg transition-all duration-200 overflow-hidden ${cfg.border}`}
+      className={`w-full bg-white rounded-2xl border-2 shadow-card hover:shadow-card-lg transition-all duration-200 overflow-hidden ${cfg?.border || 'border-slate-200'}`}
     >
       {/* Card header */}
-      <div className={`px-4 pt-4 pb-3 ${cfg.bg}`}>
+      <div className={`px-4 pt-4 pb-3 ${cfg?.bg || 'bg-slate-50'}`}>
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-xl bg-white shadow-sm flex items-center justify-center text-2xl">
-              {hewan.jenisHewan === 'Sapi' ? '🐄' : '🐐'}
+              {hewan?.jenisHewan?.toLowerCase() === 'sapi' ? '🐄' : '🐐'}
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="text-[10px] font-mono font-bold text-slate-400">#{String(hewan.nomorUrut).padStart(2, '0')}</span>
-                <StatusBadge status={hewan.status} />
+                <span className="text-[10px] font-mono font-bold text-slate-400">#{String(hewan?.nomorUrut || 0).padStart(2, '0')}</span>
+                <StatusBadge status={safeStatus} />
               </div>
-              <p className="text-sm font-bold text-slate-800 mt-0.5 leading-tight">{hewan.namaKelompok || hewan.nama}</p>
+              
+              {/* Identitas Jemaah & Kelompok */}
+              <div className="mt-2 flex flex-col gap-1.5">
+                <div className="flex items-start gap-1">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase w-14 mt-0.5 flex-shrink-0">Mudhohi</span>
+                  <span className="text-sm font-bold text-slate-800 leading-snug break-words whitespace-normal flex-1">{hewan?.nama || 'Tanpa Nama'}</span>
+                </div>
+                {hewan?.namaKelompok && (
+                  <div className="flex items-start gap-1">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase w-14 mt-0.5 flex-shrink-0">Kelompok</span>
+                    <span className="text-xs font-semibold text-slate-600 bg-slate-50 border border-slate-200 px-1.5 py-0.5 rounded-md break-words whitespace-normal flex-1">{hewan?.namaKelompok}</span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
           <button
-            onClick={() => onDelete(hewan.id)}
+            onClick={() => onDelete(hewan?.id)}
             className="w-7 h-7 rounded-lg hover:bg-red-50 flex items-center justify-center text-slate-300 hover:text-red-400 transition-colors flex-shrink-0"
             title="Hapus hewan"
           >
@@ -490,7 +497,7 @@ function HewanCard({
         </div>
 
         {/* Stepper */}
-        <StatusStepper status={hewan.status} />
+        <StatusStepper status={safeStatus} />
         <div className="flex justify-between mt-1">
           {STATUS_FLOW.map((s, i) => (
             <span key={s} className={`text-[8px] font-medium ${i <= stepIdx ? 'text-emerald-600' : 'text-slate-300'}`}>
@@ -504,20 +511,20 @@ function HewanCard({
       <div className="px-4 py-3 space-y-1.5">
         <div className="flex items-center gap-1.5 text-xs text-slate-500">
           <Weight size={11} className="text-slate-400" />
-          <span className="font-medium">{hewan.berat} kg</span>
+          <span className="font-medium">{hewan?.berat || 0} kg</span>
           <span className="text-slate-300">·</span>
           <MapPin size={11} className="text-slate-400" />
-          <span className="truncate">{hewan.asalHewan}</span>
+          <span className="truncate">{hewan?.asalHewan || '-'}</span>
         </div>
 
-        {hewan.daftarMudhohi && hewan.daftarMudhohi.length > 0 && (
+        {hewan?.daftarMudhohi && hewan.daftarMudhohi.length > 0 && (
           <div className="flex items-start gap-1.5 text-xs text-slate-500">
             <Users size={11} className="text-slate-400 mt-0.5 flex-shrink-0" />
             <span className="line-clamp-2">{hewan.daftarMudhohi.join(', ')}</span>
           </div>
         )}
 
-        {hewan.noWaMudhohi && (
+        {hewan?.noWaMudhohi && (
           <div className="flex items-center gap-1.5 text-xs text-slate-400">
             <Phone size={10} />
             <span className="font-mono">{hewan.noWaMudhohi}</span>
@@ -530,21 +537,21 @@ function HewanCard({
         <div className="relative">
           <button
             onClick={() => setOpen(o => !o)}
-            disabled={hewan.status === 'Selesai' || isSending}
+            disabled={safeStatus === 'Selesai' || isSending}
             className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all border ${
-              hewan.status === 'Selesai'
+              safeStatus === 'Selesai'
                 ? 'bg-emerald-50 text-emerald-600 border-emerald-200 opacity-60 cursor-not-allowed'
                 : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200 hover:border-emerald-300 cursor-pointer'
             }`}
-            id={`btn-status-${hewan.id}`}
+            id={`btn-status-${hewan?.id}`}
           >
             <span className="flex items-center gap-1.5">
               {isSending
                 ? <Loader2 size={12} className="animate-spin text-emerald-500" />
                 : <SlidersHorizontal size={12} className="text-slate-400" />}
-              {hewan.status === 'Selesai' ? 'Proses Selesai ✓' : 'Ubah Status'}
+              {safeStatus === 'Selesai' ? 'Proses Selesai ✓' : 'Ubah Status'}
             </span>
-            {hewan.status !== 'Selesai' && <ChevronDown size={12} className="text-slate-400" />}
+            {safeStatus !== 'Selesai' && <ChevronDown size={12} className="text-slate-400" />}
           </button>
 
           <AnimatePresence>
@@ -555,16 +562,16 @@ function HewanCard({
                 exit={{ opacity: 0, y: -4 }}
                 className="absolute bottom-full left-0 right-0 mb-1 bg-white rounded-xl shadow-lg border border-slate-100 overflow-hidden z-10"
               >
-                {STATUS_FLOW.filter(s => s !== hewan.status).map(s => {
-                  const c = STATUS_CFG[s];
+                {STATUS_FLOW.filter(s => s !== safeStatus).map(s => {
+                  const c = STATUS_CFG[s] || STATUS_CFG['Menunggu'];
                   return (
                     <button
                       key={s}
-                      onClick={() => { setOpen(false); onStatusChange(hewan.id, s); }}
-                      className={`w-full flex items-center gap-2 px-3 py-2 text-xs font-medium hover:${c.bg} transition-colors ${c.color}`}
-                      id={`btn-set-status-${s.toLowerCase().replace(' ', '-')}-${hewan.id}`}
+                      onClick={() => { setOpen(false); onStatusChange(hewan?.id, s); }}
+                      className={`w-full flex items-center gap-2 px-3 py-2 text-xs font-medium hover:${c?.bg || 'bg-slate-50'} transition-colors ${c?.color || 'text-slate-500'}`}
+                      id={`btn-set-status-${s.toLowerCase().replace(' ', '-')}-${hewan?.id}`}
                     >
-                      <span className={`w-2 h-2 rounded-full ${c.dot}`} />
+                      <span className={`w-2 h-2 rounded-full ${c?.dot || 'bg-slate-400'}`} />
                       {s}
                     </button>
                   );
@@ -627,8 +634,8 @@ function WaLogSidebar({ logs, onClear }: { logs: WaLog[]; onClear: () => void })
             >
               <div className="flex items-center justify-between mb-1.5">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-base">{log.namaHewan.includes('Kambing') ? '🐐' : '🐄'}</span>
-                  <span className="font-semibold text-slate-700 truncate max-w-[100px]">{log.namaHewan}</span>
+                  <span className="text-base">{log.namaHewan?.includes('Kambing') ? '🐐' : '🐄'}</span>
+                  <span className="font-semibold text-slate-700 truncate max-w-[100px]">{log.namaHewan || 'Hewan'}</span>
                 </div>
                 <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
                   log.success === null ? 'bg-slate-200 text-slate-500' :
@@ -665,7 +672,7 @@ export default function SapiPage() {
   const { sapi, addSapi, deleteSapi, updateStatus } = useSapi();
 
   // WA config state
-  const [waConfig, setWaConfig] = useState<WaConfig>(() => ({ token: '', modeAsli: false, ...loadWaConfig() }));
+  const [waConfig, setWaConfig] = useState<WaConfig>(() => loadWaConfig());
   const [waLog, setWaLog]       = useState<WaLog[]>(() => loadWaLog());
   const [sending, setSending]   = useState<Record<string, boolean>>({});
 
@@ -741,19 +748,20 @@ export default function SapiPage() {
     saveWaLog([]);
   }, []);
 
-  const maxUrut = sapi.reduce((m, s) => Math.max(m, s.nomorUrut), 0);
+  const maxUrut = sapi?.reduce((m, s) => Math.max(m, s?.nomorUrut || 0), 0) || 0;
 
   // Filtered list
-  const filtered = sapi.filter(s => {
-    const matchJenis  = filterJenis === 'Semua' || s.jenisHewan === filterJenis;
-    const matchStatus = filterStatus === 'Semua' || s.status === filterStatus;
+  const filtered = sapi?.filter(s => {
+    if (!s) return false;
+    const matchJenis  = filterJenis === 'Semua' || s?.jenisHewan === filterJenis;
+    const matchStatus = filterStatus === 'Semua' || normalizeStatus(s?.status) === filterStatus;
     return matchJenis && matchStatus;
-  });
+  }) || [];
 
   // Summary counts
-  const countSapi    = sapi.filter(s => s.jenisHewan === 'Sapi').length;
-  const countKambing = sapi.filter(s => s.jenisHewan === 'Kambing').length;
-  const countSelesai = sapi.filter(s => s.status === 'Selesai').length;
+  const countSapi    = sapi?.filter(s => s?.jenisHewan?.toLowerCase() === 'sapi')?.length || 0;
+  const countKambing = sapi?.filter(s => s?.jenisHewan?.toLowerCase() === 'kambing')?.length || 0;
+  const countSelesai = sapi?.filter(s => normalizeStatus(s?.status) === 'Selesai')?.length || 0;
   const isWaActive   = waConfig.modeAsli && !!waConfig.token;
 
   return (
@@ -859,7 +867,12 @@ export default function SapiPage() {
         </div>
 
         {/* Hewan grid */}
-        {filtered.length === 0 ? (
+        {!sapi ? (
+          <div className="text-center py-20">
+            <Loader2 size={32} className="animate-spin text-emerald-500 mx-auto mb-3" />
+            <p className="text-slate-400 text-sm">Memuat data hewan qurban...</p>
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="text-center py-20">
             <span className="text-5xl">🐄</span>
             <p className="text-slate-400 text-sm mt-3">Tidak ada hewan ditemukan.</p>
@@ -868,17 +881,20 @@ export default function SapiPage() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
             <AnimatePresence>
-              {filtered.map(h => (
-                <HewanCard
-                  key={h.id}
-                  hewan={h}
-                  onStatusChange={handleStatusChange}
-                  onDelete={handleDelete}
-                  isSending={!!sending[h.id]}
-                />
-              ))}
+              {filtered.map((h, i) => {
+                if (!h) return null;
+                return (
+                  <HewanCard
+                    key={h?.id || i}
+                    hewan={h}
+                    onStatusChange={handleStatusChange}
+                    onDelete={handleDelete}
+                    isSending={!!sending[h?.id]}
+                  />
+                );
+              })}
             </AnimatePresence>
           </div>
         )}

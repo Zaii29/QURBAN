@@ -1,10 +1,10 @@
-﻿import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as XLSX from 'xlsx';
 import {
   Wallet, TrendingUp, TrendingDown, Scale,
   Plus, Trash2, FileSpreadsheet, Printer, X,
-  ChevronDown, Receipt, User, Calendar, Hash,
+  ChevronDown, Receipt, User, Calendar,
   Filter, CheckCircle2, AlertTriangle,
 } from 'lucide-react';
 import { useKeuangan } from '../hooks/useMockData';
@@ -513,7 +513,6 @@ export default function KeuanganPage() {
 
   const pemasukan   = transaksi.filter(t => t.jenis === 'Pemasukan');
   const pengeluaran = transaksi.filter(t => t.jenis === 'Pengeluaran');
-  const displayed   = filterJenis ? transaksi.filter(t => t.jenis === filterJenis) : transaksi;
 
   const { totalPemasukan, totalPengeluaran, saldo } = summary;
 

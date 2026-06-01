@@ -5,14 +5,6 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import type { Sapi, Warga, Panitia, Kupon, Distribusi, Sesi, SesiWarga, ImportWargaRow, TransaksiKeuangan, KeuanganSummary } from '../types';
-import {
-  seedSapi,
-  seedWarga,
-  seedPanitia,
-  seedKupon,
-  seedDistribusi,
-  seedKeuangan,
-} from '../data/seedData';
 
 // ============================================================
 // Storage Keys

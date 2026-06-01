@@ -17,14 +17,6 @@ const gradientMap: Record<ColorVariant, string> = {
   orange: 'from-orange-500 to-amber-500',
 };
 
-const glowMap: Record<ColorVariant, string> = {
-  green:  'shadow-emerald-100',
-  gold:   'shadow-amber-100',
-  blue:   'shadow-blue-100',
-  slate:  'shadow-slate-100',
-  red:    'shadow-red-100',
-  orange: 'shadow-orange-100',
-};
 
 const iconBgMap: Record<ColorVariant, string> = {
   green:  'bg-emerald-50 text-emerald-600',

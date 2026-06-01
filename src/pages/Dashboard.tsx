@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   Beef,
@@ -11,6 +10,7 @@ import { MultiProgressBar } from '../components/ui/ProgressBar';
 import { Badge, sapiStatusToBadgeVariant } from '../components/ui/Badge';
 import { useSapi } from '../hooks/useMockData';
 import type { StatusSapi } from '../types';
+import { seedKurbanData } from '../lib/seedKurban';
 
 // ============================================================
 // Dashboard — Fokus Data Hewan Qurban
@@ -28,6 +28,13 @@ const itemVariants = {
 
 const STATUS_FLOW: StatusSapi[] = ['Menunggu', 'Disembelih', 'Dikuliti', 'Dicacah', 'Selesai'];
 
+// Helper to normalize status string
+const normalizeStatus = (status: string | undefined): StatusSapi => {
+  if (!status) return 'Menunggu';
+  const capStatus = status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+  return (STATUS_FLOW.includes(capStatus as StatusSapi) ? capStatus : 'Menunggu') as StatusSapi;
+};
+
 const STATUS_STYLE: Record<StatusSapi, { bar: string; text: string; dot: string }> = {
   Menunggu:   { bar: 'bg-slate-200',   text: 'text-slate-400',   dot: 'bg-slate-400'   },
   Disembelih: { bar: 'bg-red-400',     text: 'text-red-500',     dot: 'bg-red-500'     },
@@ -37,120 +44,23 @@ const STATUS_STYLE: Record<StatusSapi, { bar: string; text: string; dot: string 
 };
 
 // Helper: case-insensitive jenis hewan comparison
-const isSapi    = (j: string) => j?.toLowerCase() === 'sapi';
-const isKambing = (j: string) => j?.toLowerCase() === 'kambing';
+const isSapi    = (j: string | undefined) => j?.toLowerCase() === 'sapi';
+const isKambing = (j: string | undefined) => j?.toLowerCase() === 'kambing';
 
-// ============================================================
-// Real-time clock + Hijriyah/Masehi formatter
-// ============================================================
-function useRealTimeClock() {
-  const [now, setNow] = useState(new Date());
-  useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(t);
-  }, []);
-  return now;
-}
-
-function formatJam(date: Date): string {
-  return date.toLocaleTimeString('id-ID', {
-    hour:   '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-    timeZone: 'Asia/Jakarta',
-  });
-}
-
-function formatMasehi(date: Date): string {
-  return date.toLocaleDateString('id-ID', {
-    weekday: 'long',
-    day:     'numeric',
-    month:   'long',
-    year:    'numeric',
-    timeZone: 'Asia/Jakarta',
-  });
-}
-
-function formatHijriyah(date: Date): string {
-  try {
-    // Gunakan kalender Umm al-Qura (Arab Saudi) — standar penentuan Idul Adha
-    const hijri = new Intl.DateTimeFormat('id-ID-u-ca-islamic-umalqura', {
-      day:   'numeric',
-      month: 'long',
-      year:  'numeric',
-      timeZone: 'Asia/Jakarta',
-    }).format(date);
-    return hijri + ' H';
-  } catch {
-    // Fallback jika browser tidak support
-    const hijriEn = new Intl.DateTimeFormat('en-u-ca-islamic', {
-      day:   'numeric',
-      month: 'long',
-      year:  'numeric',
-    }).format(date);
-    return hijriEn + ' H';
-  }
-}
-
-// Sub-component: Clock Banner
-function ClockBanner() {
-  const now = useRealTimeClock();
-  const jam     = formatJam(now);
-  const masehi  = formatMasehi(now);
-  const hijriyah = formatHijriyah(now);
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: -8 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="bg-gradient-to-r from-emerald-700 via-teal-700 to-emerald-700 rounded-2xl p-4 text-white shadow-lg"
-    >
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        {/* Kiri: nama lembaga */}
-        <div className="flex items-center gap-3">
-          <span className="text-3xl">🕌</span>
-          <div>
-            <p className="text-base font-black tracking-tight">Pondok Riyadhussholihiin</p>
-            <p className="text-emerald-200 text-xs">Manajemen Qurban · Idul Adha 1446 H</p>
-          </div>
-        </div>
-
-        {/* Kanan: jam + tanggal */}
-        <div className="flex items-end gap-6 flex-wrap justify-end">
-          {/* Jam digital */}
-          <div className="text-right">
-            <p className="text-4xl font-black tabular-nums tracking-widest leading-none">{jam}</p>
-            <p className="text-emerald-300 text-[11px] mt-0.5 text-right">WIB (Asia/Jakarta)</p>
-          </div>
-
-          {/* Tanggal */}
-          <div className="border-l border-emerald-500 pl-6 text-right">
-            <p className="text-sm font-semibold text-white leading-snug">{masehi}</p>
-            <p className="text-emerald-200 text-xs mt-0.5 flex items-center justify-end gap-1">
-              <span>☽</span>
-              <span>{hijriyah}</span>
-            </p>
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  );
-}
 
 export default function Dashboard() {
   // Ambil data langsung dari localStorage via useSapi — single source of truth
   const { sapi: allHewan } = useSapi();
 
   // ── Counter yang benar ─────────────────────────────────────
-  const totalHewan    = allHewan.length;
-  const jumlahSapi    = allHewan.filter(h => isSapi(h.jenisHewan)).length;
-  const jumlahKambing = allHewan.filter(h => isKambing(h.jenisHewan)).length;
-  const sudahSelesai  = allHewan.filter(h => h.status === 'Selesai').length;
-  const totalBeratKg  = allHewan.reduce((acc, h) => acc + (h.berat || 0), 0);
+  const totalHewan    = allHewan?.length || 0;
+  const jumlahSapi    = allHewan?.filter(h => isSapi(h?.jenisHewan))?.length || 0;
+  const jumlahKambing = allHewan?.filter(h => isKambing(h?.jenisHewan))?.length || 0;
+  const sudahSelesai  = allHewan?.filter(h => normalizeStatus(h?.status) === 'Selesai')?.length || 0;
+  const totalBeratKg  = allHewan?.reduce((acc, h) => acc + (h?.berat || 0), 0) || 0;
 
   // ── Hitungan per status ─────────────────────────────────────
-  const countByStatus = (s: StatusSapi) => allHewan.filter(h => h.status === s).length;
+  const countByStatus = (s: StatusSapi) => allHewan?.filter(h => normalizeStatus(h?.status) === s)?.length || 0;
   const disembelih = countByStatus('Disembelih');
   const dikuliti   = countByStatus('Dikuliti');
   const dicacah    = countByStatus('Dicacah');
@@ -197,9 +107,22 @@ export default function Dashboard() {
             Pantau status seluruh hewan qurban secara real-time
           </p>
         </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 rounded-xl border border-emerald-100">
-          <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-          <span className="text-xs font-semibold text-emerald-700">Live Monitor</span>
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={async () => {
+              const success = await seedKurbanData();
+              if (success) {
+                window.location.reload();
+              }
+            }}
+            className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 rounded-xl border border-indigo-200 text-xs font-semibold text-indigo-700 transition-colors"
+          >
+            Run Seed Data
+          </button>
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 rounded-xl border border-emerald-100">
+            <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+            <span className="text-xs font-semibold text-emerald-700">Live Monitor</span>
+          </div>
         </div>
       </motion.div>
 
@@ -221,7 +144,7 @@ export default function Dashboard() {
             emoji: '🐄',
             border: 'border-emerald-200',
             sub: 'ekor sapi',
-            note: allHewan.filter(h => isSapi(h.jenisHewan)).map(h => h.namaKelompok || h.nama).slice(0, 2).join(', ') || '—',
+            note: allHewan?.filter(h => isSapi(h?.jenisHewan))?.map(h => h?.namaKelompok || h?.nama)?.slice(0, 2)?.join(', ') || '—',
           },
           {
             label: 'Jumlah Kambing/Domba',
@@ -230,7 +153,7 @@ export default function Dashboard() {
             emoji: '🐐',
             border: 'border-teal-200',
             sub: 'ekor kambing/domba',
-            note: allHewan.filter(h => isKambing(h.jenisHewan)).map(h => h.namaKelompok || h.nama).slice(0, 2).join(', ') || '—',
+            note: allHewan?.filter(h => isKambing(h?.jenisHewan))?.map(h => h?.namaKelompok || h?.nama)?.slice(0, 2)?.join(', ') || '—',
           },
           {
             label: 'Sudah Selesai',
@@ -308,18 +231,18 @@ export default function Dashboard() {
             {STATUS_FLOW.map(status => {
               const count = countByStatus(status);
               const pct   = totalHewan > 0 ? (count / totalHewan) * 100 : 0;
-              const style = STATUS_STYLE[status];
+              const style = STATUS_STYLE[status] || STATUS_STYLE['Menunggu'];
               const pulse = status !== 'Menunggu' && status !== 'Selesai' && count > 0;
 
               return (
                 <div key={status} className="flex items-center gap-3">
                   <div className="flex items-center gap-2 w-28 flex-shrink-0">
-                    <span className={`w-2 h-2 rounded-full flex-shrink-0 ${style.dot} ${pulse ? 'animate-pulse' : ''}`} />
-                    <span className={`text-xs font-semibold ${style.text}`}>{status}</span>
+                    <span className={`w-2 h-2 rounded-full flex-shrink-0 ${style?.dot || 'bg-slate-400'} ${pulse ? 'animate-pulse' : ''}`} />
+                    <span className={`text-xs font-semibold ${style?.text || 'text-slate-400'}`}>{status}</span>
                   </div>
                   <div className="flex-1 h-2.5 bg-slate-100 rounded-full overflow-hidden">
                     <motion.div
-                      className={`h-full rounded-full ${style.bar}`}
+                      className={`h-full rounded-full ${style?.bar || 'bg-slate-200'}`}
                       initial={{ width: 0 }}
                       animate={{ width: `${pct}%` }}
                       transition={{ duration: 0.8 }}
@@ -356,20 +279,22 @@ export default function Dashboard() {
             <p className="text-slate-300 text-xs mt-1">Tambahkan hewan di menu "Data Sapi".</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-            {allHewan.map((h, i) => {
-              const style     = STATUS_STYLE[h.status];
-              const isSelesai = h.status === 'Selesai';
-              const isActive  = h.status !== 'Menunggu' && h.status !== 'Selesai';
-              const stepIdx   = STATUS_FLOW.indexOf(h.status);
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+            {allHewan?.map((h, i) => {
+              if (!h) return null;
+              const safeStatus = normalizeStatus(h?.status);
+              const style     = STATUS_STYLE[safeStatus] || STATUS_STYLE['Menunggu'];
+              const isSelesai = safeStatus === 'Selesai';
+              const isActive  = safeStatus !== 'Menunggu' && safeStatus !== 'Selesai';
+              const stepIdx   = STATUS_FLOW.indexOf(safeStatus);
 
               return (
                 <motion.div
-                  key={h.id}
+                  key={h?.id || i}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.03 }}
-                  className={`bg-white rounded-2xl border-2 p-4 transition-all ${
+                  className={`w-full bg-white rounded-2xl border-2 p-5 transition-all ${
                     isSelesai ? 'border-emerald-200 opacity-80' :
                     isActive  ? 'border-orange-200 shadow-md'   :
                                 'border-slate-100'
@@ -379,25 +304,34 @@ export default function Dashboard() {
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <span className="text-xl">
-                        {isSapi(h.jenisHewan) ? '🐄' : '🐐'}
+                        {isSapi(h?.jenisHewan) ? '🐄' : '🐐'}
                       </span>
                       <span className="text-xs font-mono font-bold text-slate-300">
-                        #{String(h.nomorUrut).padStart(2, '0')}
+                        #{String(h?.nomorUrut || 0).padStart(2, '0')}
                       </span>
                     </div>
-                    <Badge variant={sapiStatusToBadgeVariant(h.status)} label={h.status} dot />
+                    <Badge variant={sapiStatusToBadgeVariant(safeStatus)} label={safeStatus} dot />
                   </div>
 
-                  {/* Nama kelompok */}
-                  <p className="text-sm font-bold text-slate-800 leading-snug truncate">
-                    {h.namaKelompok || h.nama}
-                  </p>
-                  {h.daftarMudhohi && h.daftarMudhohi.length > 0 && (
-                    <p className="text-[11px] text-slate-400 mt-0.5 line-clamp-1">
-                      {h.daftarMudhohi.join(', ')}
+                  {/* Identitas Jemaah & Kelompok */}
+                  <div className="mt-2 mb-1 flex flex-col gap-1.5">
+                    <div className="flex items-start gap-1">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase w-14 mt-0.5 flex-shrink-0">Mudhohi</span>
+                      <span className="text-sm font-bold text-slate-800 leading-snug break-words whitespace-normal flex-1">{h?.nama || 'Tanpa Nama'}</span>
+                    </div>
+                    {h?.namaKelompok && (
+                      <div className="flex items-start gap-1">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase w-14 mt-0.5 flex-shrink-0">Kelompok</span>
+                        <span className="text-xs font-semibold text-slate-600 bg-slate-50 border border-slate-100 px-1.5 py-0.5 rounded-md break-words whitespace-normal flex-1">{h?.namaKelompok}</span>
+                      </div>
+                    )}
+                  </div>
+                  {h?.daftarMudhohi && h.daftarMudhohi.length > 0 && (
+                    <p className="text-[11px] text-slate-400 mt-1 line-clamp-1">
+                      Anggota: {h.daftarMudhohi.join(', ')}
                     </p>
                   )}
-                  <p className="text-xs text-slate-400 mt-1">⚖️ {h.berat} kg</p>
+                  <p className="text-xs text-slate-400 mt-1">⚖️ {h?.berat || 0} kg</p>
 
                   {/* Stepper mini */}
                   <div className="flex gap-0.5 mt-3">
@@ -406,7 +340,7 @@ export default function Dashboard() {
                         key={si}
                         className={`flex-1 h-1 rounded-full transition-all ${
                           si < stepIdx   ? 'bg-emerald-400' :
-                          si === stepIdx ? `${style.bar} ${isActive ? 'animate-pulse' : ''}` :
+                          si === stepIdx ? `${style?.bar || 'bg-slate-200'} ${isActive ? 'animate-pulse' : ''}` :
                                           'bg-slate-100'
                         }`}
                       />
