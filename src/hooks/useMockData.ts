@@ -35,7 +35,7 @@ export function useSapi() {
       asalHewan: 'Supabase',
       status: a.status as any || 'Menunggu',
       namaKelompok: a.group_name || '',
-      noWaMudhohi: a.whatsapp || undefined,
+      noWaMudhohi: a.phone_number || undefined,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }));
@@ -62,7 +62,11 @@ export function useSapi() {
     sapi: data,
     reload: fetchSapi,
     updateStatus: async (id: string, status: Sapi['status']) => {
-      await supabase.from('animals').update({ status }).eq('id', Number(id));
+      const { error } = await supabase.from('animals').update({ status }).eq('id', id);
+      if (error) {
+        console.error("Error Update:", error);
+        throw error;
+      }
     },
     addSapi: async (item: Omit<Sapi, 'id' | 'createdAt' | 'updatedAt'>) => {
       const { data, error } = await supabase.from('animals').insert([{
@@ -71,17 +75,17 @@ export function useSapi() {
         status: item.status,
         customer_name: item.nama,
         group_name: item.namaKelompok || null,
-        whatsapp: item.noWaMudhohi || null
+        phone_number: item.noWaMudhohi || null
       }]).select().single();
       
       if (error) {
-        console.error('Error adding sapi:', error);
-        return null;
+        console.error('Error Tambah:', error);
+        throw error;
       }
       return data;
     },
     deleteSapi: async (id: string) => {
-      await supabase.from('animals').delete().eq('id', Number(id));
+      await supabase.from('animals').delete().eq('id', id);
     },
     updateSapi: async (id: string, patch: Partial<Omit<Sapi, 'id' | 'createdAt'>>) => {
       const updateData: any = {};
@@ -90,9 +94,12 @@ export function useSapi() {
       if (patch.status !== undefined) updateData.status = patch.status;
       if (patch.nama !== undefined) updateData.customer_name = patch.nama;
       if (patch.namaKelompok !== undefined) updateData.group_name = patch.namaKelompok;
-      if (patch.noWaMudhohi !== undefined) updateData.whatsapp = patch.noWaMudhohi;
+      if (patch.noWaMudhohi !== undefined) updateData.phone_number = patch.noWaMudhohi || null;
 
-      await supabase.from('animals').update(updateData).eq('id', Number(id));
+      const { error } = await supabase.from('animals').update(updateData).eq('id', id);
+      if (error) {
+        console.error('Error updating sapi:', error);
+      }
     },
   };
 }

@@ -7,7 +7,8 @@ const kurbanData = [
     group_name: 'Sapi-1', 
     weight: 300, 
     status: 'Menunggu', 
-    customer_name: 'Indraningsih, Allenno Zaimusy, Keluarga Juwanto, Hendri bin Suwandi, Agung Wibowo, Ibu Rodiah, Bpk Sigit Prasetyo' 
+    customer_name: 'Indraningsih, Allenno Zaimusy, Keluarga Juwanto, Hendri bin Suwandi, Agung Wibowo, Ibu Rodiah, Bpk Sigit Prasetyo',
+    phone_number: '628123456789'
   },
   // SAPI 2
   { 
@@ -15,10 +16,11 @@ const kurbanData = [
     group_name: 'Sapi-2', 
     weight: 300, 
     status: 'Menunggu', 
-    customer_name: 'Ratno wijoyo, Heri setiawan, Pipit Agustina, Zyan Arjuna, Adi Surya, Keluarga Andrianto, Keluarga bpk Audy' 
+    customer_name: 'Ratno wijoyo, Heri setiawan, Pipit Agustina, Zyan Arjuna, Adi Surya, Keluarga Andrianto, Keluarga bpk Audy',
+    phone_number: '628123456789'
   },
   // KAMBING
-  { type: 'kambing', group_name: '', weight: 45, status: 'Menunggu', customer_name: 'Tsara Anindia Irawan Binti Candra Irawan' },
+  { type: 'kambing', group_name: '', weight: 45, status: 'Menunggu', customer_name: 'Tsara Anindia Irawan Binti Candra Irawan', phone_number: '628123456789' },
   { type: 'kambing', group_name: '', weight: 45, status: 'Menunggu', customer_name: 'Ibu Choiriyah Nur a.n Unaisih binti Marsa (CGN)' },
   { type: 'kambing', group_name: '', weight: 45, status: 'Menunggu', customer_name: 'Satyndra Jaswal bin Satender Kumar Jaswal (B1 no.10 )' },
   { type: 'kambing', group_name: '', weight: 45, status: 'Menunggu', customer_name: 'Ibu Fatimah binti Tahril AL 6 No 19' },

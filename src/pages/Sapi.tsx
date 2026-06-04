@@ -249,31 +249,43 @@ const EMPTY_HEWAN: TambahHewanForm = {
 function TambahHewanModal({ maxUrut, onClose, onSave }: {
   maxUrut: number;
   onClose: () => void;
-  onSave: (data: Omit<Sapi, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  onSave: (data: Omit<Sapi, 'id' | 'createdAt' | 'updatedAt'>) => Promise<any> | void;
 }) {
   const [form, setForm] = useState<TambahHewanForm>(EMPTY_HEWAN);
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const set = (k: keyof TambahHewanForm, v: string) => setForm(p => ({ ...p, [k]: v }));
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!form.namaKelompok.trim()) { setError('Nama kelompok wajib diisi.'); return; }
     if (!form.namaJemaah.trim()) { setError('Nama Jemaah / Mudhohi utama wajib diisi.'); return; }
     if (!form.berat || Number(form.berat) <= 0) { setError('Berat hewan harus lebih dari 0.'); return; }
     if (!form.asalHewan.trim()) { setError('Asal/Supplier wajib diisi.'); return; }
 
-    onSave({
-      nomorUrut:     maxUrut + 1,
-      nama:          form.namaJemaah.trim(), // Multiple names can be entered here directly
-      jenisHewan:    form.jenisHewan,
-      namaKelompok:  form.namaKelompok.trim(),
-      noWaMudhohi:   form.noWaMudhohi.trim() || undefined,
-      berat:         Number(form.berat),
-      asalHewan:     form.asalHewan.trim(),
-      catatan:       form.catatan.trim() || undefined,
-      status:        'Menunggu',
-    });
-    onClose();
+    try {
+      setIsSubmitting(true);
+      setError('');
+      await onSave({
+        nomorUrut:     maxUrut + 1,
+        nama:          form.namaJemaah.trim(), // Multiple names can be entered here directly
+        jenisHewan:    form.jenisHewan,
+        namaKelompok:  form.namaKelompok.trim(),
+        noWaMudhohi:   form.noWaMudhohi.trim() || undefined,
+        berat:         Number(form.berat),
+        asalHewan:     form.asalHewan.trim(),
+        catatan:       form.catatan.trim() || undefined,
+        status:        'Menunggu',
+      });
+      onClose();
+    } catch (err: any) {
+      console.error("Error Tambah:", err);
+      const errMsg = err?.message || 'Terjadi kesalahan saat menyimpan data.';
+      setError(errMsg);
+      alert(`Gagal menyimpan data ke Supabase:\n${errMsg}`);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -421,9 +433,10 @@ function TambahHewanModal({ maxUrut, onClose, onSave }: {
         </div>
 
         <div className="p-5 pt-0 flex gap-2">
-          <button onClick={onClose} className="btn-secondary flex-1 justify-center">Batal</button>
-          <button onClick={handleSubmit} className="btn-primary flex-1 justify-center" id="btn-simpan-hewan">
-            <Plus size={14} /> Tambah Hewan
+          <button onClick={onClose} disabled={isSubmitting} className="btn-secondary flex-1 justify-center disabled:opacity-50">Batal</button>
+          <button onClick={handleSubmit} disabled={isSubmitting} className="btn-primary flex-1 justify-center disabled:opacity-50" id="btn-simpan-hewan">
+            {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} 
+            {isSubmitting ? 'Menyimpan...' : 'Tambah Hewan'}
           </button>
         </div>
       </motion.div>
@@ -669,7 +682,7 @@ function WaLogSidebar({ logs, onClear }: { logs: WaLog[]; onClear: () => void })
 // Main Page: Manajemen Hewan Qurban
 // ============================================================
 export default function SapiPage() {
-  const { sapi, addSapi, deleteSapi, updateStatus } = useSapi();
+  const { sapi, addSapi, deleteSapi, updateStatus, reload } = useSapi();
 
   // WA config state
   const [waConfig, setWaConfig] = useState<WaConfig>(() => loadWaConfig());
@@ -703,18 +716,26 @@ export default function SapiPage() {
     const hewan = sapi.find(s => s.id === id);
     if (!hewan) return;
 
-    updateStatus(id, newStatus);
-    setSending(p => ({ ...p, [id]: true }));
+    try {
+      setSending(p => ({ ...p, [id]: true }));
+      await updateStatus(id, newStatus);
+      reload();
+    } catch (err) {
+      console.error("Error Update Status:", err);
+      setSending(p => ({ ...p, [id]: false }));
+      return;
+    }
 
     const namaKelompok = hewan.namaKelompok || hewan.nama;
     const mudhohi = hewan.daftarMudhohi?.[0] || namaKelompok;
     const pesan = WA_MESSAGES[newStatus](mudhohi, namaKelompok);
     const target = hewan.noWaMudhohi || '';
 
-    const useReal = waConfig.modeAsli && !!waConfig.token && !!target;
+    const activeToken = import.meta.env.VITE_WHATSAPP_API_KEY || waConfig.token;
+    const useReal = waConfig.modeAsli && !!activeToken && !!target;
 
     if (useReal) {
-      const success = await sendFonnte(waConfig.token, target, pesan);
+      const success = await sendFonnte(activeToken, target, pesan);
       appendLog({
         namaHewan: namaKelompok,
         status: newStatus,
@@ -737,7 +758,7 @@ export default function SapiPage() {
     }
 
     setSending(p => ({ ...p, [id]: false }));
-  }, [sapi, waConfig, updateStatus, appendLog]);
+  }, [sapi, waConfig, updateStatus, appendLog, reload]);
 
   const handleDelete = useCallback((id: string) => {
     if (window.confirm('Hapus hewan ini dari daftar?')) deleteSapi(id);
@@ -913,7 +934,10 @@ export default function SapiPage() {
           <TokenModal config={waConfig} onSave={saveConfig} onClose={() => setShowToken(false)} />
         )}
         {showTambah && (
-          <TambahHewanModal maxUrut={maxUrut} onClose={() => setShowTambah(false)} onSave={addSapi} />
+          <TambahHewanModal maxUrut={maxUrut} onClose={() => setShowTambah(false)} onSave={async (data) => {
+            await addSapi(data);
+            reload();
+          }} />
         )}
       </AnimatePresence>
     </div>
